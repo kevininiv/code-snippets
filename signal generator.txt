@@ -1,0 +1,57 @@
+import matplotlib.pyplot as plt
+import random
+import math
+import cmath
+m = 3
+M = 2**m #M-ary PSK with M = 8
+EbN0dB = [1]
+EbN0 = [10**(k/10) for k in EbN0dB]
+AllSER = []
+print(EbN0dB,EbN0)
+color_map = ['red','green','lightblue','orange',
+ 'magenta','gray','pink','purple']
+MX_RUN = 100
+all_sig_phase = [k*2*math.pi/M for k in range(M)]
+for ebn0db in EbN0dB:
+ ebn0 = 10**(ebn0db/10)
+ plt.figure()
+ cnt_symbol_error = 0
+ for k in range(MX_RUN):
+ data = random.randint(0,M-1)
+ signal = cmath.exp(data*2*math.pi/M*1j)
+ Es = signal.real**2 + signal.imag**2
+ Eb = Es/m
+ noise_variance = 0.5*Eb*10**(-ebn0/10)
+ sigma = math.sqrt(noise_variance)
+
+plt.plot([signal.real],[signal.imag],marker='o',color=color_map[data])
+ noise = random.gauss(0,sigma) + random.gauss(0,sigma)*1j
+ receive = signal + noise
+
+plt.plot([receive.real],[receive.imag],marker='.',color=color_map[data])
+ receive_phase = cmath.phase(receive)
+ if receive_phase<0:
+   receive_phase += 2*cmath.pi
+ signal_phase = cmath.phase(signal)
+ if signal_phase<0:
+   signal_phase += 2*cmath.pi
+ min_phase_diff = 1000000
+ detect = 100000
+ for k in range(M):
+ phs = all_sig_phase[k]
+ if k==0 and receive_phase>math.pi:
+ phs += 2*cmath.pi
+ dist = abs(receive_phase - phs)
+ if dist < min_phase_diff:
+ min_phase_diff = dist
+ detect = k
+ if data!=detect:
+ cnt_symbol_error += 1
+ #print('Symbol errors =',cnt_symbol_error)
+ plt.title('EbN0 (dB) = '+str(ebn0db))
+ plt.grid(True)
+ plt.xlim([-2,2])
+ plt.ylim([-2,2])
+ AllSER.append(cnt_symbol_error/MX_RUN)
+plt.show()
+ 
